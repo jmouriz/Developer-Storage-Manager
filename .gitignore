@@ -1,0 +1,22 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Xcode
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+
+# Generated applications and installers
+*.app
+*.dmg
+
+# Editors
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+._*
