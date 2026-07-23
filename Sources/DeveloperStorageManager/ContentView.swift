@@ -349,14 +349,35 @@ private struct MetricCard: View {
             Spacer()
             if let buttonTitle, let buttonAction {
                 Button(buttonTitle, role: .destructive, action: buttonAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
+                    .buttonStyle(SoftDestructiveButtonStyle())
                     .disabled(isButtonDisabled)
             }
         }
         .padding(14)
         .frame(minWidth: 260)
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+private struct SoftDestructiveButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.callout.weight(.medium))
+            .foregroundStyle(isEnabled ? Color.red : Color.secondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background(
+                Color.red.opacity(
+                    isEnabled ? (configuration.isPressed ? 0.20 : 0.12) : 0.05
+                ),
+                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(Color.red.opacity(isEnabled ? 0.18 : 0.08), lineWidth: 1)
+            }
     }
 }
 
