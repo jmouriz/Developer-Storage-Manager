@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-07-23
+
+### Added
+
+- Navigation from every category-usage row in the overview to its corresponding detail section.
+- Localized accessibility help for category row controls.
+
 ## [0.4.2] - 2026-07-23
 
 ### Changed

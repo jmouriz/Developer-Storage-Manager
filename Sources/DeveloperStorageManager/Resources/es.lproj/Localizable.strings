@@ -10,6 +10,7 @@
 "action.cancel" = "Cancelar";
 "action.delete" = "Eliminar";
 "action.showFinder" = "Mostrar en Finder";
+"action.openCategory" = "Abrir %@";
 "action.cleanAll" = "Limpiar todos";
 "cleanup.failed.title" = "No se pudo completar la limpieza";
 "cleanup.completed.title" = "Limpieza completada";

@@ -51,7 +51,7 @@ struct ContentView: View {
         } detail: {
             switch selection {
             case .summary:
-                SummaryView(model: model)
+                SummaryView(model: model, selection: $selection)
             case .category(let category):
                 CategoryView(category: category, model: model)
             case nil:
@@ -106,6 +106,7 @@ struct ContentView: View {
 
 private struct SummaryView: View {
     let model: StorageViewModel
+    @Binding var selection: SidebarItem?
     @State private var confirmsCandidateCleanup = false
 
     private var snapshot: StorageSnapshot { model.snapshot }
@@ -146,7 +147,11 @@ private struct SummaryView: View {
                 }
 
                 GroupBox(L10n.tr("chart.category.title")) {
-                    CategoryUsageList(categories: categories, snapshot: snapshot)
+                    CategoryUsageList(
+                        categories: categories,
+                        snapshot: snapshot,
+                        onSelect: { selection = .category($0) }
+                    )
                         .padding(.top, 10)
                 }
             }
@@ -248,6 +253,7 @@ private struct DiskLegend: View {
 private struct CategoryUsageList: View {
     let categories: [StorageCategory]
     let snapshot: StorageSnapshot
+    let onSelect: (StorageCategory) -> Void
 
     private let colors: [Color] = [
         .blue, .green, .orange, .purple, .pink, .teal,
@@ -263,30 +269,37 @@ private struct CategoryUsageList: View {
             ForEach(Array(categories.enumerated()), id: \.element.id) { index, category in
                 let size = snapshot.bytes(in: category)
 
-                HStack(spacing: 14) {
-                    Label(category.title, systemImage: category.systemImage)
-                        .lineLimit(1)
-                        .frame(minWidth: 170, idealWidth: 220, maxWidth: 260, alignment: .leading)
+                Button {
+                    onSelect(category)
+                } label: {
+                    HStack(spacing: 14) {
+                        Label(category.title, systemImage: category.systemImage)
+                            .lineLimit(1)
+                            .frame(minWidth: 170, idealWidth: 220, maxWidth: 260, alignment: .leading)
 
-                    GeometryReader { proxy in
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(.primary.opacity(0.08))
-                            Capsule()
-                                .fill(colors[index % colors.count].gradient)
-                                .frame(width: max(
-                                    3,
-                                    proxy.size.width * CGFloat(size) / CGFloat(largestSize)
-                                ))
+                        GeometryReader { proxy in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(.primary.opacity(0.08))
+                                Capsule()
+                                    .fill(colors[index % colors.count].gradient)
+                                    .frame(width: max(
+                                        3,
+                                        proxy.size.width * CGFloat(size) / CGFloat(largestSize)
+                                    ))
+                            }
                         }
-                    }
-                    .frame(height: 8)
+                        .frame(height: 8)
 
-                    Text(size, format: .byteCount(style: .file))
-                        .font(.callout.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .frame(width: 112, alignment: .trailing)
+                        Text(size, format: .byteCount(style: .file))
+                            .font(.callout.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(width: 112, alignment: .trailing)
+                    }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .help(L10n.format("action.openCategory", category.title))
                 .padding(.horizontal, 12)
                 .frame(height: 40)
                 .background(
