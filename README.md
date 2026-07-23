@@ -22,11 +22,20 @@ Developer Storage Manager explains where disk space is being used, recommends ol
 
 ![Installed Android Virtual Devices](Screenshots/android-emulators.png)
 
+### Android SDK Versions
+
+![Installed Android platforms](Screenshots/android-platforms.png)
+
+![Installed Android system images](Screenshots/android-system-images.png)
+
 ## Features
 
 - Disk usage overview across Xcode and Android development data.
 - Simulator names and runtime versions instead of opaque UUIDs.
 - Android Virtual Device names, API levels, architectures, sizes, and locations.
+- Android Platforms, System Images, Build Tools, and Sources grouped by installed version.
+- Protection for system images currently used by an installed AVD.
+- Conservative review notices for older SDK components that a project may still require.
 - Cleanup recommendations that keep the newest version for each device model.
 - Individual cleanup actions and bulk cleanup for suggested candidates.
 - Finder integration for every scanned item.
@@ -74,7 +83,9 @@ swift test
 
 ## Safety
 
-Every cleanup operation requires confirmation. User-managed files and Android Virtual Devices are moved to the Trash, while Apple simulator devices and runtimes are removed through CoreSimulator. Cleanup is restricted to known paths under `~/Library/Developer` and `~/.android/avd`.
+Every cleanup operation requires confirmation. User-managed files, Android Virtual Devices, and Android SDK packages are moved to the Trash, while Apple simulator devices and runtimes are removed through CoreSimulator. Cleanup is restricted to known paths under `~/Library/Developer`, `~/.android/avd`, and the detected Android SDK.
+
+Bulk cleanup is intentionally conservative: it may suggest older, unused Android system images, but never Platforms, Build Tools, Sources, or images currently used by an AVD. Those components remain available for individual review and confirmed cleanup.
 
 Please report security concerns according to [SECURITY.md](SECURITY.md).
 

@@ -12,22 +12,21 @@ struct ContentView: View {
                 Label(L10n.tr("overview"), systemImage: "chart.pie")
                     .tag(SidebarItem.summary)
 
-                Section(L10n.tr("categories")) {
-                    ForEach(StorageCategory.allCases) { category in
-                        Label {
-                            HStack {
-                                Text(category.title)
-                                Spacer()
-                                Text(model.snapshot.bytes(in: category), format: .byteCount(style: .file))
-                                    .foregroundStyle(.secondary)
-                            }
-                        } icon: {
-                            Image(systemName: category.systemImage)
-                        }
-                        .tag(SidebarItem.category(category))
+                Section("Xcode") {
+                    ForEach(StorageCategory.xcodeCategories) { category in
+                        sidebarLabel(for: category)
+                            .tag(SidebarItem.category(category))
+                    }
+                }
+
+                Section("Android") {
+                    ForEach(StorageCategory.androidCategories) { category in
+                        sidebarLabel(for: category)
+                            .tag(SidebarItem.category(category))
                     }
                 }
             }
+            .navigationSplitViewColumnWidth(min: 280, ideal: 330, max: 400)
             .navigationTitle("Developer Storage")
             .safeAreaInset(edge: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -88,6 +87,19 @@ struct ContentView: View {
             Button(L10n.tr("action.ok")) { model.clearCleanupSuccess() }
         } message: {
             Text(model.cleanupSuccessMessage ?? "")
+        }
+    }
+
+    private func sidebarLabel(for category: StorageCategory) -> some View {
+        Label {
+            HStack {
+                Text(category.title)
+                Spacer()
+                Text(model.snapshot.bytes(in: category), format: .byteCount(style: .file))
+                    .foregroundStyle(.secondary)
+            }
+        } icon: {
+            Image(systemName: category.systemImage)
         }
     }
 }
@@ -334,14 +346,14 @@ private struct CategoryView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
-                            if let reason = item.candidateReason {
+                            if let reason = item.candidateReason ?? item.advisoryReason {
                                 Text(reason)
                                     .font(.caption)
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(item.candidateReason != nil ? .orange : .blue)
                                     .lineLimit(1)
                             }
                         }
-                        .help(item.candidateReason ?? item.path)
+                        .help(item.candidateReason ?? item.advisoryReason ?? item.path)
                     }
                     .width(min: 230, ideal: 360, max: 560)
                     TableColumn(L10n.tr("table.modified"), value: \.modifiedSortDate) { item in

@@ -1,5 +1,11 @@
 import Foundation
 
+enum RecommendationPolicy: Hashable, Sendable {
+    case automatic
+    case reviewOnly
+    case none
+}
+
 struct StorageLocation: Identifiable, Hashable, Sendable {
     let id: String
     let category: StorageCategory
@@ -11,7 +17,9 @@ struct StorageLocation: Identifiable, Hashable, Sendable {
     let comparisonGroup: String?
     let versionComponents: [Int]?
     let relatedPaths: [String]
+    let recommendationPolicy: RecommendationPolicy
     var candidateReason: String?
+    var advisoryReason: String?
 
     var modifiedSortDate: Date { modifiedAt ?? .distantPast }
 
@@ -25,7 +33,9 @@ struct StorageLocation: Identifiable, Hashable, Sendable {
         comparisonGroup: String? = nil,
         versionComponents: [Int]? = nil,
         relatedPaths: [String] = [],
-        candidateReason: String? = nil
+        recommendationPolicy: RecommendationPolicy = .automatic,
+        candidateReason: String? = nil,
+        advisoryReason: String? = nil
     ) {
         self.id = path
         self.category = category
@@ -37,7 +47,9 @@ struct StorageLocation: Identifiable, Hashable, Sendable {
         self.comparisonGroup = comparisonGroup
         self.versionComponents = versionComponents
         self.relatedPaths = relatedPaths
+        self.recommendationPolicy = recommendationPolicy
         self.candidateReason = candidateReason
+        self.advisoryReason = advisoryReason
     }
 }
 
@@ -50,8 +62,21 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
     case archives
     case documentation
     case androidEmulators
+    case androidPlatforms
+    case androidSystemImages
+    case androidBuildTools
+    case androidSources
 
     var id: String { rawValue }
+
+    static let xcodeCategories: [StorageCategory] = [
+        .simulatorRuntimes, .simulatorDevices, .simulatorCaches, .deviceSupport,
+        .derivedData, .archives, .documentation
+    ]
+    static let androidCategories: [StorageCategory] = [
+        .androidEmulators, .androidPlatforms, .androidSystemImages,
+        .androidBuildTools, .androidSources
+    ]
 
     var title: String {
         switch self {
@@ -63,6 +88,10 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
         case .archives: L10n.tr("category.archives.title")
         case .documentation: L10n.tr("category.documentation.title")
         case .androidEmulators: L10n.tr("category.androidEmulators.title")
+        case .androidPlatforms: L10n.tr("category.androidPlatforms.title")
+        case .androidSystemImages: L10n.tr("category.androidSystemImages.title")
+        case .androidBuildTools: L10n.tr("category.androidBuildTools.title")
+        case .androidSources: L10n.tr("category.androidSources.title")
         }
     }
 
@@ -76,6 +105,10 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
         case .archives: L10n.tr("category.archives.subtitle")
         case .documentation: L10n.tr("category.documentation.subtitle")
         case .androidEmulators: L10n.tr("category.androidEmulators.subtitle")
+        case .androidPlatforms: L10n.tr("category.androidPlatforms.subtitle")
+        case .androidSystemImages: L10n.tr("category.androidSystemImages.subtitle")
+        case .androidBuildTools: L10n.tr("category.androidBuildTools.subtitle")
+        case .androidSources: L10n.tr("category.androidSources.subtitle")
         }
     }
 
@@ -89,6 +122,10 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
         case .archives: "archivebox"
         case .documentation: "books.vertical"
         case .androidEmulators: "smartphone"
+        case .androidPlatforms: "square.stack.3d.up.fill"
+        case .androidSystemImages: "externaldrive.fill.badge.checkmark"
+        case .androidBuildTools: "wrench.and.screwdriver"
+        case .androidSources: "chevron.left.forwardslash.chevron.right"
         }
     }
 }

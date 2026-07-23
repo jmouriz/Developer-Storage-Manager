@@ -8,12 +8,17 @@ struct StorageScanner: Sendable {
 
     private let roots: [Root]
     private let homePath: String
+    private let androidSDKDirectory: URL?
 
     private var fileManager: FileManager { FileManager.default }
 
-    init(homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser) {
+    init(
+        homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
+        androidSDKDirectory: URL? = nil
+    ) {
         let home = homeDirectory.path
         homePath = home
+        self.androidSDKDirectory = androidSDKDirectory ?? Self.findAndroidSDK(homeDirectory: homeDirectory)
         roots = [
             Root(category: .simulatorRuntimes, path: "/Library/Developer/CoreSimulator/Volumes"),
             Root(category: .simulatorDevices, path: "\(home)/Library/Developer/CoreSimulator/Devices"),
@@ -68,6 +73,7 @@ struct StorageScanner: Sendable {
         }
 
         scanAndroidEmulators(into: &locations, warnings: &warnings)
+        scanAndroidSDK(into: &locations, warnings: &warnings)
         markOlderVersions(in: &locations)
         let disk = diskCapacity()
         return StorageSnapshot(
@@ -77,6 +83,17 @@ struct StorageScanner: Sendable {
             totalDiskBytes: disk.total,
             availableDiskBytes: disk.available
         )
+    }
+
+    private static func findAndroidSDK(homeDirectory: URL) -> URL? {
+        let environment = ProcessInfo.processInfo.environment
+        let candidates = [
+            environment["ANDROID_SDK_ROOT"],
+            environment["ANDROID_HOME"],
+            homeDirectory.appendingPathComponent("Library/Android/sdk", isDirectory: true).path,
+            homeDirectory.appendingPathComponent("Android/Sdk", isDirectory: true).path
+        ].compactMap { $0 }.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        return candidates.first { FileManager.default.fileExists(atPath: $0.path) }
     }
 
     private func scanAndroidEmulators(
@@ -135,6 +152,147 @@ struct StorageScanner: Sendable {
         } catch {
             warnings.append(L10n.format("scanner.readError", avdRoot.path, error.localizedDescription))
         }
+    }
+
+    private func scanAndroidSDK(
+        into locations: inout [StorageLocation],
+        warnings: inout [String]
+    ) {
+        guard let sdk = androidSDKDirectory else { return }
+        let usedSystemImages = androidSystemImagesUsedByAVDs()
+
+        scanAndroidVersionDirectories(
+            root: sdk.appendingPathComponent("platforms", isDirectory: true),
+            category: .androidPlatforms,
+            group: "android-platforms",
+            recommendationPolicy: .reviewOnly,
+            detail: { name in "Android API \(self.apiNumber(in: name) ?? 0)" },
+            into: &locations,
+            warnings: &warnings
+        )
+        scanAndroidVersionDirectories(
+            root: sdk.appendingPathComponent("build-tools", isDirectory: true),
+            category: .androidBuildTools,
+            group: "android-build-tools",
+            recommendationPolicy: .reviewOnly,
+            detail: { version in L10n.format("android.buildTools.detail", version) },
+            into: &locations,
+            warnings: &warnings
+        )
+        scanAndroidVersionDirectories(
+            root: sdk.appendingPathComponent("sources", isDirectory: true),
+            category: .androidSources,
+            group: "android-sources",
+            recommendationPolicy: .reviewOnly,
+            detail: { name in "Android API \(self.apiNumber(in: name) ?? 0)" },
+            into: &locations,
+            warnings: &warnings
+        )
+
+        let root = sdk.appendingPathComponent("system-images", isDirectory: true)
+        guard fileManager.fileExists(atPath: root.path) else { return }
+        do {
+            let apis = try directoryChildren(of: root)
+            for apiDirectory in apis {
+                for tagDirectory in try directoryChildren(of: apiDirectory) {
+                    for architectureDirectory in try directoryChildren(of: tagDirectory) {
+                        let api = apiNumber(in: apiDirectory.lastPathComponent)
+                        guard let api else { continue }
+                        let path = architectureDirectory.standardizedFileURL.path
+                        let isUsed = usedSystemImages.contains(path)
+                        let tag = tagDirectory.lastPathComponent.replacingOccurrences(of: "_", with: " ")
+                        let architecture = architectureDirectory.lastPathComponent
+                        let values = try? architectureDirectory.resourceValues(forKeys: [.contentModificationDateKey])
+                        locations.append(StorageLocation(
+                            category: .androidSystemImages,
+                            name: "Android API \(api)",
+                            detail: "\(tag) · \(architecture)",
+                            path: architectureDirectory.path,
+                            byteCount: allocatedSize(of: architectureDirectory),
+                            modifiedAt: values?.contentModificationDate,
+                            comparisonGroup: "android-system-image:\(tagDirectory.lastPathComponent):\(architecture)",
+                            versionComponents: [api],
+                            recommendationPolicy: isUsed ? .none : .automatic,
+                            advisoryReason: isUsed ? L10n.tr("android.systemImage.inUse") : nil
+                        ))
+                    }
+                }
+            }
+        } catch {
+            warnings.append(L10n.format("scanner.readError", root.path, error.localizedDescription))
+        }
+    }
+
+    private func scanAndroidVersionDirectories(
+        root: URL,
+        category: StorageCategory,
+        group: String,
+        recommendationPolicy: RecommendationPolicy,
+        detail: (String) -> String,
+        into locations: inout [StorageLocation],
+        warnings: inout [String]
+    ) {
+        guard fileManager.fileExists(atPath: root.path) else { return }
+        do {
+            for directory in try directoryChildren(of: root) {
+                let name = directory.lastPathComponent
+                let version = versionNumbers(in: name)
+                guard !version.isEmpty else { continue }
+                let values = try? directory.resourceValues(forKeys: [.contentModificationDateKey])
+                locations.append(StorageLocation(
+                    category: category,
+                    name: name,
+                    detail: detail(name),
+                    path: directory.path,
+                    byteCount: allocatedSize(of: directory),
+                    modifiedAt: values?.contentModificationDate,
+                    comparisonGroup: group,
+                    versionComponents: version,
+                    recommendationPolicy: recommendationPolicy
+                ))
+            }
+        } catch {
+            warnings.append(L10n.format("scanner.readError", root.path, error.localizedDescription))
+        }
+    }
+
+    private func directoryChildren(of root: URL) throws -> [URL] {
+        try fileManager.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey, .contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ).filter {
+            (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        }
+    }
+
+    private func androidSystemImagesUsedByAVDs() -> Set<String> {
+        guard let sdk = androidSDKDirectory else { return [] }
+        let avdRoot = URL(fileURLWithPath: homePath).appendingPathComponent(".android/avd", isDirectory: true)
+        guard let descriptors = try? fileManager.contentsOfDirectory(
+            at: avdRoot,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ).filter({ $0.pathExtension == "ini" }) else { return [] }
+
+        return Set(descriptors.compactMap { descriptor -> String? in
+            let descriptorValues = iniValues(at: descriptor)
+            let fallbackName = descriptor.deletingPathExtension().lastPathComponent
+            let avdURL = descriptorValues["path"].map(URL.init(fileURLWithPath:))
+                ?? avdRoot.appendingPathComponent("\(fallbackName).avd", isDirectory: true)
+            guard let imagePath = iniValues(at: avdURL.appendingPathComponent("config.ini"))["image.sysdir.1"] else {
+                return nil
+            }
+            let url = imagePath.hasPrefix("/")
+                ? URL(fileURLWithPath: imagePath)
+                : sdk.appendingPathComponent(imagePath)
+            return url.standardizedFileURL.path
+        })
+    }
+
+    private func apiNumber(in text: String) -> Int? {
+        guard let range = text.range(of: #"android-(\d+)"#, options: .regularExpression) else { return nil }
+        return Int(text[range].dropFirst("android-".count))
     }
 
     private func iniValues(at url: URL) -> [String: String] {
@@ -214,7 +372,14 @@ struct StorageScanner: Sendable {
             for index in indices {
                 guard let version = locations[index].versionComponents, versionIsOlder(version, newest) else { continue }
                 let latest = newest.map(String.init).joined(separator: ".")
-                locations[index].candidateReason = L10n.format("candidate.newerVersion", latest)
+                switch locations[index].recommendationPolicy {
+                case .automatic:
+                    locations[index].candidateReason = L10n.format("candidate.newerVersion", latest)
+                case .reviewOnly:
+                    locations[index].advisoryReason = L10n.format("candidate.reviewNewerVersion", latest)
+                case .none:
+                    break
+                }
             }
         }
     }

@@ -101,7 +101,10 @@ import Testing
     )
     try Data(repeating: 1, count: 4_096).write(to: avd.appendingPathComponent("userdata.img"))
 
-    let snapshot = StorageScanner(homeDirectory: temporaryHome).scan()
+    let snapshot = StorageScanner(
+        homeDirectory: temporaryHome,
+        androidSDKDirectory: temporaryHome.appendingPathComponent("AndroidSDK")
+    ).scan()
     let emulator = try #require(snapshot.locations(in: .androidEmulators).first)
 
     #expect(emulator.name == "Pixel 8a API 35")
@@ -111,4 +114,39 @@ import Testing
         emulator.relatedPaths.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
             == [avdRoot.appendingPathComponent("Pixel_8a_API_35.ini").standardizedFileURL.path]
     )
+}
+
+@Test func androidSDKVersionsUseConservativeRecommendations() throws {
+    let temporaryHome = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let sdk = temporaryHome.appendingPathComponent("Library/Android/sdk", isDirectory: true)
+    let avdRoot = temporaryHome.appendingPathComponent(".android/avd", isDirectory: true)
+    let avd = avdRoot.appendingPathComponent("Pixel_API_35.avd", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: temporaryHome) }
+
+    let platform34 = sdk.appendingPathComponent("platforms/android-34", isDirectory: true)
+    let platform35 = sdk.appendingPathComponent("platforms/android-35", isDirectory: true)
+    let image34 = sdk.appendingPathComponent("system-images/android-34/google_apis/arm64-v8a", isDirectory: true)
+    let image35 = sdk.appendingPathComponent("system-images/android-35/google_apis/arm64-v8a", isDirectory: true)
+    for directory in [platform34, platform35, image34, image35, avd] {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try Data(repeating: 1, count: 32).write(to: directory.appendingPathComponent("payload"))
+    }
+    try "image.sysdir.1=system-images/android-35/google_apis/arm64-v8a/\n"
+        .write(to: avd.appendingPathComponent("config.ini"), atomically: true, encoding: .utf8)
+    try "path=\(avd.path)\n"
+        .write(to: avdRoot.appendingPathComponent("Pixel_API_35.ini"), atomically: true, encoding: .utf8)
+
+    let snapshot = StorageScanner(homeDirectory: temporaryHome, androidSDKDirectory: sdk).scan()
+    let platforms = snapshot.locations(in: .androidPlatforms)
+    let images = snapshot.locations(in: .androidSystemImages)
+    let olderPlatform = try #require(platforms.first { $0.name == "android-34" })
+    let olderImage = try #require(images.first { $0.name == "Android API 34" })
+    let usedImage = try #require(images.first { $0.name == "Android API 35" })
+
+    #expect(olderPlatform.candidateReason == nil)
+    #expect(olderPlatform.advisoryReason != nil)
+    #expect(olderImage.candidateReason != nil)
+    #expect(usedImage.candidateReason == nil)
+    #expect(usedImage.advisoryReason == L10n.tr("android.systemImage.inUse"))
 }

@@ -5,7 +5,7 @@ struct AboutView: View {
     private let repositoryURL = URL(string: "https://github.com/jmouriz/Developer-Storage-Manager")!
 
     private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.2.0"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.3.0"
     }
 
     var body: some View {

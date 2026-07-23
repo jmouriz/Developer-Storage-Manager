@@ -26,9 +26,29 @@ struct CleanupService: Sendable {
             try runSimctl(["runtime", "delete", identifier])
         case .androidEmulators:
             try moveAndroidEmulatorToTrash(location)
+        case .androidPlatforms, .androidSystemImages, .androidBuildTools, .androidSources:
+            try moveAndroidSDKDataToTrash(at: URL(fileURLWithPath: location.path))
         case .simulatorCaches, .deviceSupport, .derivedData, .archives, .documentation:
             try moveUserDataToTrash(at: URL(fileURLWithPath: location.path))
         }
+    }
+
+    private func moveAndroidSDKDataToTrash(at url: URL) throws {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let environment = ProcessInfo.processInfo.environment
+        let roots = [
+            environment["ANDROID_SDK_ROOT"],
+            environment["ANDROID_HOME"],
+            home.appendingPathComponent("Library/Android/sdk", isDirectory: true).path,
+            home.appendingPathComponent("Android/Sdk", isDirectory: true).path
+        ].compactMap { $0 }.map {
+            URL(fileURLWithPath: $0, isDirectory: true).standardizedFileURL.path
+        }
+        let target = url.standardizedFileURL.path
+        guard roots.contains(where: { target.hasPrefix($0 + "/") }) else {
+            throw CleanupError.unsafePath(target)
+        }
+        try FileManager.default.trashItem(at: url, resultingItemURL: nil)
     }
 
     private func moveAndroidEmulatorToTrash(_ location: StorageLocation) throws {

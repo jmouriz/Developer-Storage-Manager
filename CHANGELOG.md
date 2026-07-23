@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-23
+
+### Added
+
+- Android Platforms, System Images, Build Tools, and Sources storage categories.
+- Detection of system images currently used by installed Android Virtual Devices.
+- Conservative review notices for older Platforms, Build Tools, and Sources.
+
+### Changed
+
+- Bulk cleanup only suggests older Android system images that are not used by an AVD.
+- Sidebar categories are grouped by Xcode and Android.
+
 ## [0.2.0] - 2026-07-23
 
 ### Added
