@@ -140,6 +140,7 @@ private struct SummaryView: View {
                             value: snapshot.candidateBytes,
                             icon: "sparkles",
                             buttonTitle: L10n.tr("action.cleanAll"),
+                            emphasizesCleanup: true,
                             isButtonDisabled: candidates.isEmpty || model.isScanning || model.isCleaning,
                             buttonAction: { confirmsCandidateCleanup = true }
                         )
@@ -325,6 +326,7 @@ private struct MetricCard: View {
     let value: Int64
     let icon: String
     var buttonTitle: String? = nil
+    var emphasizesCleanup = false
     var isButtonDisabled = false
     var buttonAction: (() -> Void)? = nil
 
@@ -338,11 +340,17 @@ private struct MetricCard: View {
                 Text(title).font(.caption).foregroundStyle(.secondary)
                 Text(value, format: .byteCount(style: .file))
                     .font(.title3.bold().monospacedDigit())
+                    .foregroundStyle(
+                        emphasizesCleanup
+                            ? (value > 0 ? Color.orange : Color.secondary)
+                            : Color.primary
+                    )
             }
             Spacer()
             if let buttonTitle, let buttonAction {
                 Button(buttonTitle, role: .destructive, action: buttonAction)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
                     .disabled(isButtonDisabled)
             }
         }

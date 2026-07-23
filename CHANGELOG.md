@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-07-23
+
+### Changed
+
+- Styled the overview’s “Clean all” action as a prominent red destructive button.
+- Highlighted the suggested cleanup size in the same orange used by the sidebar cleanup total.
+
 ## [0.4.5] - 2026-07-23
 
 ### Fixed
