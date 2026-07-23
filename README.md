@@ -4,33 +4,27 @@ A native macOS app to analyze, identify, and clean up storage used by Xcode and 
 
 Developer Storage Manager explains where disk space is being used, recommends older simulator, device-symbol, and Android emulator versions as cleanup candidates, and always asks for confirmation before removing anything.
 
+[Download the latest release](https://github.com/jmouriz/Developer-Storage-Manager/releases/latest) and drag Developer Storage Manager to your Applications folder.
+
 ## Screenshots
 
 ### Overview
 
 ![Developer Storage Manager overview](Screenshots/overview.png)
 
-### Simulators
+### Xcode storage
 
-![Simulator storage and cleanup candidates](Screenshots/simulators.png)
+| Simulators | Device symbols |
+| --- | --- |
+| ![Simulator storage and cleanup candidates](Screenshots/simulators.png) | ![Device symbol storage and cleanup candidates](Screenshots/device-symbols.png) |
 
-### Device Symbols
+### Android storage
 
-![Device symbol storage and cleanup candidates](Screenshots/device-symbols.png)
-
-### Android Emulators
-
-![Installed Android Virtual Devices](Screenshots/android-emulators.png)
-
-### Android SDK Versions
-
-![Installed Android platforms](Screenshots/android-platforms.png)
-
-![Installed Android system images](Screenshots/android-system-images.png)
-
-### Gradle Cache
-
-![Gradle cache and cleanup candidates](Screenshots/gradle-cache.png)
+| Android emulators | Android platforms |
+| --- | --- |
+| ![Installed Android Virtual Devices](Screenshots/android-emulators.png) | ![Installed Android platforms](Screenshots/android-platforms.png) |
+| Android system images | Gradle cache |
+| ![Installed Android system images](Screenshots/android-system-images.png) | ![Gradle cache and cleanup candidates](Screenshots/gradle-cache.png) |
 
 ## Features
 
