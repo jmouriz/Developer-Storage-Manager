@@ -199,20 +199,25 @@ private struct SummaryView: View {
                             .controlSize(.regular)
                         Text(L10n.tr("action.scanning"))
                             .font(.headline)
-                        Text(model.scanProgress.phase)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .multilineTextAlignment(.center)
-                        if let detail = model.scanProgress.detail {
-                            Text(detail)
+                        VStack(spacing: 3) {
+                            Text(model.scanProgress.phase)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .frame(height: 30, alignment: .top)
+
+                            Text(model.scanProgress.detail ?? " ")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
                                 .lineLimit(2)
                                 .truncationMode(.middle)
+                                .frame(height: 28, alignment: .top)
                         }
+                        .frame(height: 61, alignment: .top)
                     }
-                    .frame(maxWidth: 190)
+                    .frame(width: 200, height: 116, alignment: .top)
                     .foregroundStyle(.primary)
                     .transition(.opacity)
                 } else {

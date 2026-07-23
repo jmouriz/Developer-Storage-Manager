@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-07-23
+
+### Fixed
+
+- Kept the overview spinner and scan phase anchored while variable-length item details update.
+
 ## [0.4.3] - 2026-07-23
 
 ### Added
