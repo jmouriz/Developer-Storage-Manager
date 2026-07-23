@@ -217,6 +217,33 @@ import Testing
     #expect(item.isDeletionBlocked)
 }
 
+@Test func scannerReportsDetailedProgressThroughCandidateAnalysis() throws {
+    let temporaryHome = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let gradle = temporaryHome.appendingPathComponent(".gradle", isDirectory: true)
+    let cache = gradle.appendingPathComponent("caches/8.0", isDirectory: true)
+    let recorder = ScanProgressRecorder()
+    defer { try? FileManager.default.removeItem(at: temporaryHome) }
+
+    try createGradleFixture(at: cache, modifiedAt: Date(timeIntervalSince1970: 1_700_000_000))
+    _ = StorageScanner(
+        homeDirectory: temporaryHome,
+        androidSDKDirectory: temporaryHome.appendingPathComponent("AndroidSDK"),
+        gradleDirectory: gradle,
+        gradleIsRunning: false,
+        progressHandler: { recorder.append($0) }
+    ).scan()
+
+    let progress = recorder.values
+    #expect(progress.contains {
+        $0.phase == L10n.tr("scan.phase.measuring")
+            && $0.detail?.contains(cache.lastPathComponent) == true
+    })
+    #expect(progress.contains { $0.phase == L10n.tr("scan.phase.activity") })
+    #expect(progress.contains { $0.phase == L10n.tr("scan.phase.candidates") })
+    #expect(progress.last?.phase == L10n.tr("scan.phase.disk"))
+}
+
 private func createGradleFixture(at directory: URL, modifiedAt: Date) throws {
     let fileManager = FileManager.default
     try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -225,4 +252,17 @@ private func createGradleFixture(at directory: URL, modifiedAt: Date) throws {
     let attributes: [FileAttributeKey: Any] = [.modificationDate: modifiedAt]
     try fileManager.setAttributes(attributes, ofItemAtPath: payload.path)
     try fileManager.setAttributes(attributes, ofItemAtPath: directory.path)
+}
+
+private final class ScanProgressRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [StorageScanProgress] = []
+
+    var values: [StorageScanProgress] {
+        lock.withLock { storage }
+    }
+
+    func append(_ progress: StorageScanProgress) {
+        lock.withLock { storage.append(progress) }
+    }
 }

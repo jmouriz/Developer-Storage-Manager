@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-23
+
+### Added
+
+- Live scan details showing the current phase, category, and item.
+- Explicit progress while checking Gradle activity, comparing installed versions, applying cleanup policies, and reading disk capacity.
+
 ## [0.4.0] - 2026-07-23
 
 ### Added

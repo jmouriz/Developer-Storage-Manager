@@ -212,15 +212,26 @@ private struct SummaryView: View {
                     .foregroundStyle(.gray.opacity(0.25))
                 }
                 if model.isScanning {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 6) {
                         ProgressView()
                             .controlSize(.regular)
                         Text(L10n.tr("action.scanning"))
                             .font(.headline)
-                            Text(L10n.tr("chart.developerData"))
+                        Text(model.scanProgress.phase)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .fontWeight(.medium)
+                            .multilineTextAlignment(.center)
+                        if let detail = model.scanProgress.detail {
+                            Text(detail)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .truncationMode(.middle)
+                        }
                     }
+                    .frame(maxWidth: 190)
+                    .foregroundStyle(.primary)
                     .transition(.opacity)
                 } else {
                     VStack(spacing: 2) {
@@ -319,8 +330,21 @@ private struct CategoryView: View {
             Divider()
 
             if model.isScanning && locations.isEmpty {
-                ProgressView(L10n.tr("scanning.sizes"))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 8) {
+                    ProgressView()
+                    Text(model.scanProgress.phase)
+                        .font(.headline)
+                    if let detail = model.scanProgress.detail {
+                        Text(detail)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .truncationMode(.middle)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if locations.isEmpty {
                 ContentUnavailableView(
                     L10n.tr("empty.title"),

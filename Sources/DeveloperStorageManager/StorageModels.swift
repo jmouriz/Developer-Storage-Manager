@@ -1,5 +1,10 @@
 import Foundation
 
+struct StorageScanProgress: Equatable, Sendable {
+    let phase: String
+    let detail: String?
+}
+
 enum RecommendationPolicy: Hashable, Sendable {
     case automatic
     case reviewOnly

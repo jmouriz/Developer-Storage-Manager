@@ -13,6 +13,7 @@ struct StorageScanner: Sendable {
     private let gradleRunningOverride: Bool?
     private let referenceDate: Date
     private let gradleStaleDays: Int
+    private let progressHandler: @Sendable (StorageScanProgress) -> Void
 
     private var fileManager: FileManager { FileManager.default }
 
@@ -22,7 +23,8 @@ struct StorageScanner: Sendable {
         gradleDirectory: URL? = nil,
         gradleIsRunning: Bool? = nil,
         referenceDate: Date = .now,
-        gradleStaleDays: Int = 90
+        gradleStaleDays: Int = 90,
+        progressHandler: @escaping @Sendable (StorageScanProgress) -> Void = { _ in }
     ) {
         let home = homeDirectory.path
         homePath = home
@@ -32,6 +34,7 @@ struct StorageScanner: Sendable {
         gradleRunningOverride = gradleIsRunning
         self.referenceDate = referenceDate
         self.gradleStaleDays = gradleStaleDays
+        self.progressHandler = progressHandler
         roots = [
             Root(category: .simulatorRuntimes, path: "/Library/Developer/CoreSimulator/Volumes"),
             Root(category: .simulatorDevices, path: "\(home)/Library/Developer/CoreSimulator/Devices"),
@@ -69,9 +72,11 @@ struct StorageScanner: Sendable {
                     let values = try? child.resourceValues(forKeys: [.contentModificationDateKey])
                     let device = root.category == .simulatorDevices ? simulatorDescription(at: child) : nil
                     let symbols = root.category == .deviceSupport ? deviceSupportDescription(for: child.lastPathComponent) : nil
+                    let name = device?.name ?? child.lastPathComponent
+                    report(phase: "scan.phase.measuring", category: root.category, item: name)
                     locations.append(StorageLocation(
                         category: root.category,
-                        name: device?.name ?? child.lastPathComponent,
+                        name: name,
                         detail: device?.detail,
                         path: child.path,
                         byteCount: allocatedSize(of: child),
@@ -88,7 +93,9 @@ struct StorageScanner: Sendable {
         scanAndroidEmulators(into: &locations, warnings: &warnings)
         scanAndroidSDK(into: &locations, warnings: &warnings)
         scanGradleCache(into: &locations, warnings: &warnings)
+        report(phase: "scan.phase.candidates", detail: L10n.tr("scan.detail.comparingVersions"))
         markOlderVersions(in: &locations)
+        report(phase: "scan.phase.disk", detail: L10n.tr("scan.detail.diskCapacity"))
         let disk = diskCapacity()
         return StorageSnapshot(
             locations: locations,
@@ -97,6 +104,21 @@ struct StorageScanner: Sendable {
             totalDiskBytes: disk.total,
             availableDiskBytes: disk.available
         )
+    }
+
+    private func report(
+        phase key: String,
+        category: StorageCategory? = nil,
+        item: String? = nil,
+        detail: String? = nil
+    ) {
+        let components = [category?.title, item, detail]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+        progressHandler(StorageScanProgress(
+            phase: L10n.tr(key),
+            detail: components.isEmpty ? nil : components.joined(separator: " · ")
+        ))
     }
 
     private func scanGradleCache(
@@ -120,11 +142,14 @@ struct StorageScanner: Sendable {
             do {
                 let units = group.wholeRoot ? [group.root] : try directoryChildren(of: group.root)
                 for unit in units {
-                    let stats = gradleStats(of: unit, cutoff: cutoff)
-                    let modified = stats.modifiedAt
                     let name = group.wholeRoot
                         ? group.kind
                         : "\(group.kind) · \(unit.lastPathComponent)"
+                    report(phase: "scan.phase.measuring", category: .gradleCache, item: name)
+                    let diskSize = diskUsage(of: unit)
+                    report(phase: "scan.phase.activity", category: .gradleCache, item: name)
+                    let stats = gradleStats(of: unit, cutoff: cutoff, diskSize: diskSize)
+                    let modified = stats.modifiedAt
                     locations.append(StorageLocation(
                         category: .gradleCache,
                         name: name,
@@ -146,8 +171,11 @@ struct StorageScanner: Sendable {
         }
     }
 
-    private func gradleStats(of url: URL, cutoff: Date) -> (size: Int64, modifiedAt: Date?, isStale: Bool) {
-        let diskSize = diskUsage(of: url)
+    private func gradleStats(
+        of url: URL,
+        cutoff: Date,
+        diskSize: Int64?
+    ) -> (size: Int64, modifiedAt: Date?, isStale: Bool) {
         let latestModification = latestContentModification(in: url)
         let fallback = diskSize == nil || latestModification == nil ? directoryStats(of: url) : nil
         let size = diskSize ?? fallback?.size ?? 0
@@ -275,6 +303,11 @@ struct StorageScanner: Sendable {
                     device
                 ].compactMap { $0 }.filter { !$0.isEmpty }
                 let modified = try? avdURL.resourceValues(forKeys: [.contentModificationDateKey])
+                report(
+                    phase: "scan.phase.measuring",
+                    category: .androidEmulators,
+                    item: displayName
+                )
 
                 locations.append(StorageLocation(
                     category: .androidEmulators,
@@ -342,6 +375,11 @@ struct StorageScanner: Sendable {
                         let tag = tagDirectory.lastPathComponent.replacingOccurrences(of: "_", with: " ")
                         let architecture = architectureDirectory.lastPathComponent
                         let values = try? architectureDirectory.resourceValues(forKeys: [.contentModificationDateKey])
+                        report(
+                            phase: "scan.phase.measuring",
+                            category: .androidSystemImages,
+                            item: "Android API \(api) · \(tag) · \(architecture)"
+                        )
                         locations.append(StorageLocation(
                             category: .androidSystemImages,
                             name: "Android API \(api)",
@@ -378,6 +416,7 @@ struct StorageScanner: Sendable {
                 let version = versionNumbers(in: name)
                 guard !version.isEmpty else { continue }
                 let values = try? directory.resourceValues(forKeys: [.contentModificationDateKey])
+                report(phase: "scan.phase.measuring", category: category, item: name)
                 locations.append(StorageLocation(
                     category: category,
                     name: name,
@@ -507,6 +546,13 @@ struct StorageScanner: Sendable {
 
         for entries in grouped.values where entries.count > 1 {
             let indices = entries.map(\.1)
+            if let firstIndex = indices.first {
+                report(
+                    phase: "scan.phase.candidates",
+                    category: locations[firstIndex].category,
+                    item: locations[firstIndex].name
+                )
+            }
             guard let newest = indices.compactMap({ locations[$0].versionComponents }).max(by: versionIsOlder) else { continue }
             for index in indices {
                 guard let version = locations[index].versionComponents, versionIsOlder(version, newest) else { continue }

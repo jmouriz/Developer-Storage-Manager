@@ -5,6 +5,10 @@ import Foundation
 final class StorageViewModel {
     private(set) var snapshot = StorageSnapshot.empty
     private(set) var isScanning = false
+    private(set) var scanProgress = StorageScanProgress(
+        phase: L10n.tr("scan.phase.preparing"),
+        detail: nil
+    )
     private(set) var isCleaning = false
     private(set) var errorMessage: String?
     private(set) var cleanupSuccessMessage: String?
@@ -13,10 +17,23 @@ final class StorageViewModel {
         guard !isScanning else { return }
         isScanning = true
         errorMessage = nil
+        scanProgress = StorageScanProgress(phase: L10n.tr("scan.phase.preparing"), detail: nil)
 
-        let result = await Task.detached(priority: .userInitiated) {
-            StorageScanner().scan()
-        }.value
+        let (progressStream, progressContinuation) = AsyncStream.makeStream(
+            of: StorageScanProgress.self
+        )
+        let scanTask = Task.detached(priority: .userInitiated) {
+            let result = StorageScanner(progressHandler: { progress in
+                progressContinuation.yield(progress)
+            }).scan()
+            progressContinuation.finish()
+            return result
+        }
+
+        for await progress in progressStream {
+            scanProgress = progress
+        }
+        let result = await scanTask.value
 
         snapshot = result
         isScanning = false

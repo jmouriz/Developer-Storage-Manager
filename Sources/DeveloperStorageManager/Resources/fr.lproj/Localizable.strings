@@ -31,6 +31,13 @@
 "cleanup.all.button" = "Nettoyer %d éléments";
 "cleanup.all.message" = "L’application tentera de récupérer %@. Les données utilisateur seront placées dans la Corbeille ; les simulateurs et runtimes seront supprimés via CoreSimulator. Les données Gradle devront peut-être être téléchargées ou reconstruites, ce qui ralentira la prochaine compilation. Une nouvelle analyse sera lancée à la fin.";
 "scanning.sizes" = "Calcul des tailles…";
+"scan.phase.preparing" = "Préparation de l’analyse…";
+"scan.phase.measuring" = "Mesure de l’utilisation du disque";
+"scan.phase.activity" = "Vérification de l’activité récente";
+"scan.phase.candidates" = "Détermination des candidats au nettoyage";
+"scan.phase.disk" = "Lecture des informations du disque";
+"scan.detail.comparingVersions" = "Comparaison des versions installées et des règles de nettoyage";
+"scan.detail.diskCapacity" = "Calcul de la capacité et de l’espace disponible";
 "empty.title" = "Aucun élément trouvé";
 "empty.description" = "Cet emplacement ne contient aucune donnée de développement.";
 "table.item" = "Élément";

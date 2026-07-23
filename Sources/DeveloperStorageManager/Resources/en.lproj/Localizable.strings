@@ -31,6 +31,13 @@
 "cleanup.all.button" = "Clean %d items";
 "cleanup.all.message" = "This will attempt to recover %@. User data will be moved to the Trash; simulators and runtimes are removed through CoreSimulator. Gradle data may need to be downloaded or rebuilt, making the next build slower. The scan will run again when finished.";
 "scanning.sizes" = "Calculating sizes…";
+"scan.phase.preparing" = "Preparing scan…";
+"scan.phase.measuring" = "Measuring disk usage";
+"scan.phase.activity" = "Checking recent activity";
+"scan.phase.candidates" = "Determining cleanup candidates";
+"scan.phase.disk" = "Reading disk information";
+"scan.detail.comparingVersions" = "Comparing installed versions and cleanup policies";
+"scan.detail.diskCapacity" = "Calculating capacity and available space";
 "empty.title" = "No items found";
 "empty.description" = "This location contains no developer data.";
 "table.item" = "Item";
