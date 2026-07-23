@@ -50,8 +50,10 @@
 "delete.thisItem" = "this item";
 "delete.coreSimulator.message" = "This will free %@. CoreSimulator will remove this item and the operation may be irreversible. The scan will then run again.";
 "delete.trash.message" = "This will free %@. The item will be moved to the Trash and the scan will then run again.";
-"cleanup.success.trash" = "%d items were cleaned. User data was moved to the Trash and the scan was updated.";
-"cleanup.success.simulator" = "%d items were cleaned through CoreSimulator and the scan was updated.";
+"cleanup.success.trash.one" = "%d item was cleaned. User data was moved to the Trash and the scan was updated.";
+"cleanup.success.trash.other" = "%d items were cleaned. User data was moved to the Trash and the scan was updated.";
+"cleanup.success.simulator.one" = "%d item was cleaned through CoreSimulator and the scan was updated.";
+"cleanup.success.simulator.other" = "%d items were cleaned through CoreSimulator and the scan was updated.";
 "category.runtimes.title" = "Simulator runtimes";
 "category.simulators.title" = "Simulators";
 "category.caches.title" = "Simulator caches";

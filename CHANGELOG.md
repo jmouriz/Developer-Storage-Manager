@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-07-23
+
+### Fixed
+
+- Corrected singular and plural cleanup-result messages for Trash and CoreSimulator operations in all supported languages.
+
 ## [0.4.4] - 2026-07-23
 
 ### Fixed

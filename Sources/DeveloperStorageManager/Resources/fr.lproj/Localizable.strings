@@ -50,8 +50,10 @@
 "delete.thisItem" = "cet élément";
 "delete.coreSimulator.message" = "Cette opération libérera %@. CoreSimulator supprimera cet élément et l’opération peut être irréversible. Une nouvelle analyse sera ensuite lancée.";
 "delete.trash.message" = "Cette opération libérera %@. L’élément sera placé dans la Corbeille et une nouvelle analyse sera ensuite lancée.";
-"cleanup.success.trash" = "%d éléments ont été nettoyés. Les données utilisateur ont été placées dans la Corbeille et l’analyse a été mise à jour.";
-"cleanup.success.simulator" = "%d éléments ont été nettoyés via CoreSimulator et l’analyse a été mise à jour.";
+"cleanup.success.trash.one" = "%d élément a été nettoyé. Les données utilisateur ont été placées dans la Corbeille et l’analyse a été mise à jour.";
+"cleanup.success.trash.other" = "%d éléments ont été nettoyés. Les données utilisateur ont été placées dans la Corbeille et l’analyse a été mise à jour.";
+"cleanup.success.simulator.one" = "%d élément a été nettoyé via CoreSimulator et l’analyse a été mise à jour.";
+"cleanup.success.simulator.other" = "%d éléments ont été nettoyés via CoreSimulator et l’analyse a été mise à jour.";
 "category.runtimes.title" = "Runtimes de simulateurs";
 "category.simulators.title" = "Simulateurs";
 "category.caches.title" = "Caches de simulateurs";

@@ -69,8 +69,16 @@ final class StorageViewModel {
             errorMessage = result.0.joined(separator: "\n\n")
         } else if result.1 > 0 {
             cleanupSuccessMessage = result.2 > 0
-                ? L10n.format("cleanup.success.trash", result.1)
-                : L10n.format("cleanup.success.simulator", result.1)
+                ? L10n.plural(
+                    one: "cleanup.success.trash.one",
+                    other: "cleanup.success.trash.other",
+                    count: result.1
+                )
+                : L10n.plural(
+                    one: "cleanup.success.simulator.one",
+                    other: "cleanup.success.simulator.other",
+                    count: result.1
+                )
         }
         await scan()
     }
