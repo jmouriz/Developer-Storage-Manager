@@ -146,31 +146,8 @@ private struct SummaryView: View {
                 }
 
                 GroupBox(L10n.tr("chart.category.title")) {
-                    Chart(categories) { category in
-                        BarMark(
-                            x: .value(L10n.tr("chart.size"), snapshot.bytes(in: category)),
-                            y: .value(L10n.tr("chart.category"), category.title)
-                        )
-                        .foregroundStyle(by: .value(L10n.tr("chart.category"), category.title))
-                        .annotation(position: .trailing) {
-                            Text(snapshot.bytes(in: category), format: .byteCount(style: .file))
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .chartLegend(.hidden)
-                    .chartXAxis {
-                        AxisMarks { value in
-                            AxisGridLine()
-                            AxisValueLabel {
-                                if let bytes = value.as(Int64.self) {
-                                    Text(bytes, format: .byteCount(style: .file))
-                                }
-                            }
-                        }
-                    }
-                    .frame(minHeight: 208)
-                    .padding(.top, 12)
+                    CategoryUsageList(categories: categories, snapshot: snapshot)
+                        .padding(.top, 10)
                 }
             }
             .padding(28)
@@ -265,6 +242,63 @@ private struct DiskLegend: View {
             Circle().fill(color).frame(width: 8, height: 8)
         }
         .labelStyle(.titleAndIcon)
+    }
+}
+
+private struct CategoryUsageList: View {
+    let categories: [StorageCategory]
+    let snapshot: StorageSnapshot
+
+    private let colors: [Color] = [
+        .blue, .green, .orange, .purple, .pink, .teal,
+        .indigo, .mint, .cyan, .yellow, .red, .brown
+    ]
+
+    private var largestSize: Int64 {
+        max(1, categories.map { snapshot.bytes(in: $0) }.max() ?? 1)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(categories.enumerated()), id: \.element.id) { index, category in
+                let size = snapshot.bytes(in: category)
+
+                HStack(spacing: 14) {
+                    Label(category.title, systemImage: category.systemImage)
+                        .lineLimit(1)
+                        .frame(minWidth: 170, idealWidth: 220, maxWidth: 260, alignment: .leading)
+
+                    GeometryReader { proxy in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(.primary.opacity(0.08))
+                            Capsule()
+                                .fill(colors[index % colors.count].gradient)
+                                .frame(width: max(
+                                    3,
+                                    proxy.size.width * CGFloat(size) / CGFloat(largestSize)
+                                ))
+                        }
+                    }
+                    .frame(height: 8)
+
+                    Text(size, format: .byteCount(style: .file))
+                        .font(.callout.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 112, alignment: .trailing)
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 40)
+                .background(
+                    .primary.opacity(index.isMultiple(of: 2) ? 0.055 : 0.018)
+                )
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(.primary.opacity(0.08), lineWidth: 1)
+        }
     }
 }
 

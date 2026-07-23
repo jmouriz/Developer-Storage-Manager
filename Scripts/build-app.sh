@@ -43,7 +43,7 @@ xcrun actool "$asset_catalog_dir" \
     --output-partial-info-plist "$build_dir/AppIcon-Info.plist" \
     >/dev/null
 
-sed "s/@VERSION@/0.4.1/g" "$project_dir/Scripts/Info.plist.template" > "$contents_dir/Info.plist"
+sed "s/@VERSION@/0.4.2/g" "$project_dir/Scripts/Info.plist.template" > "$contents_dir/Info.plist"
 printf 'APPL????' > "$contents_dir/PkgInfo"
 codesign --force --deep --sign - "$app_dir"
 touch "$app_dir"
