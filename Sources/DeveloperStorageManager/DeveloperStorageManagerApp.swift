@@ -9,7 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct XcodeStorageManagerApp: App {
+struct DeveloperStorageManagerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
@@ -17,7 +17,7 @@ struct XcodeStorageManagerApp: App {
             ContentView()
                 .frame(minWidth: 900, minHeight: 640)
         }
-        .defaultSize(width: 1_200, height: 760)
+        .defaultSize(width: 1_200, height: 820)
         .windowStyle(.titleBar)
         .commands {
             AboutCommands()

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import XcodeStorageManager
+@testable import DeveloperStorageManager
 
 @Test func snapshotGroupsAndTotalsLocations() {
     let locations = [
@@ -67,7 +67,7 @@ import Testing
     let unsafe = StorageLocation(
         category: .derivedData,
         name: "No permitido",
-        path: "/tmp/xcode-storage-manager-unsafe-target",
+        path: "/tmp/developer-storage-manager-unsafe-target",
         byteCount: 0,
         modifiedAt: nil
     )
@@ -75,4 +75,40 @@ import Testing
     #expect(throws: CleanupService.CleanupError.self) {
         try CleanupService().remove(unsafe)
     }
+}
+
+@Test func androidVirtualDevicesAreDiscovered() throws {
+    let temporaryHome = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let avdRoot = temporaryHome.appendingPathComponent(".android/avd", isDirectory: true)
+    let avd = avdRoot.appendingPathComponent("Pixel_8a_API_35.avd", isDirectory: true)
+    try FileManager.default.createDirectory(at: avd, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: temporaryHome) }
+
+    try """
+    avd.ini.displayname=Pixel 8a API 35
+    abi.type=arm64-v8a
+    hw.device.name=pixel_8a
+    image.sysdir.1=system-images/android-35/google_apis/arm64-v8a/
+    """.write(to: avd.appendingPathComponent("config.ini"), atomically: true, encoding: .utf8)
+    try """
+    path=\(avd.path)
+    path.rel=.android/avd/Pixel_8a_API_35.avd
+    """.write(
+        to: avdRoot.appendingPathComponent("Pixel_8a_API_35.ini"),
+        atomically: true,
+        encoding: .utf8
+    )
+    try Data(repeating: 1, count: 4_096).write(to: avd.appendingPathComponent("userdata.img"))
+
+    let snapshot = StorageScanner(homeDirectory: temporaryHome).scan()
+    let emulator = try #require(snapshot.locations(in: .androidEmulators).first)
+
+    #expect(emulator.name == "Pixel 8a API 35")
+    #expect(emulator.detail?.contains("Android API 35") == true)
+    #expect(emulator.detail?.contains("arm64-v8a") == true)
+    #expect(
+        emulator.relatedPaths.map { URL(fileURLWithPath: $0).standardizedFileURL.path }
+            == [avdRoot.appendingPathComponent("Pixel_8a_API_35.ini").standardizedFileURL.path]
+    )
 }

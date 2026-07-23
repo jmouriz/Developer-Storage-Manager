@@ -2,20 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "XcodeStorageManager",
+    name: "DeveloperStorageManager",
     defaultLocalization: "en",
     platforms: [.macOS(.v15)],
     products: [
-        .executable(name: "XcodeStorageManager", targets: ["XcodeStorageManager"])
+        .executable(name: "DeveloperStorageManager", targets: ["DeveloperStorageManager"])
     ],
     targets: [
         .executableTarget(
-            name: "XcodeStorageManager",
+            name: "DeveloperStorageManager",
             resources: [.process("Resources")]
         ),
         .testTarget(
-            name: "XcodeStorageManagerTests",
-            dependencies: ["XcodeStorageManager"]
+            name: "DeveloperStorageManagerTests",
+            dependencies: ["DeveloperStorageManager"]
         )
     ]
 )

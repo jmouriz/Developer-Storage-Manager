@@ -24,8 +24,26 @@ struct CleanupService: Sendable {
                 throw CleanupError.runtimeIdentifierMissing(location.name)
             }
             try runSimctl(["runtime", "delete", identifier])
+        case .androidEmulators:
+            try moveAndroidEmulatorToTrash(location)
         case .simulatorCaches, .deviceSupport, .derivedData, .archives, .documentation:
             try moveUserDataToTrash(at: URL(fileURLWithPath: location.path))
+        }
+    }
+
+    private func moveAndroidEmulatorToTrash(_ location: StorageLocation) throws {
+        let avdRoot = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".android/avd", isDirectory: true)
+            .standardizedFileURL.path + "/"
+        for path in [location.path] + location.relatedPaths {
+            let url = URL(fileURLWithPath: path)
+            let target = url.standardizedFileURL.path
+            guard target.hasPrefix(avdRoot), target != String(avdRoot.dropLast()) else {
+                throw CleanupError.unsafePath(target)
+            }
+            if FileManager.default.fileExists(atPath: target) {
+                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            }
         }
     }
 

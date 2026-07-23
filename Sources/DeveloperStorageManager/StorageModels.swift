@@ -10,6 +10,7 @@ struct StorageLocation: Identifiable, Hashable, Sendable {
     let modifiedAt: Date?
     let comparisonGroup: String?
     let versionComponents: [Int]?
+    let relatedPaths: [String]
     var candidateReason: String?
 
     var modifiedSortDate: Date { modifiedAt ?? .distantPast }
@@ -23,6 +24,7 @@ struct StorageLocation: Identifiable, Hashable, Sendable {
         modifiedAt: Date?,
         comparisonGroup: String? = nil,
         versionComponents: [Int]? = nil,
+        relatedPaths: [String] = [],
         candidateReason: String? = nil
     ) {
         self.id = path
@@ -34,6 +36,7 @@ struct StorageLocation: Identifiable, Hashable, Sendable {
         self.modifiedAt = modifiedAt
         self.comparisonGroup = comparisonGroup
         self.versionComponents = versionComponents
+        self.relatedPaths = relatedPaths
         self.candidateReason = candidateReason
     }
 }
@@ -46,6 +49,7 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
     case derivedData
     case archives
     case documentation
+    case androidEmulators
 
     var id: String { rawValue }
 
@@ -58,6 +62,7 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
         case .derivedData: L10n.tr("category.derivedData.title")
         case .archives: L10n.tr("category.archives.title")
         case .documentation: L10n.tr("category.documentation.title")
+        case .androidEmulators: L10n.tr("category.androidEmulators.title")
         }
     }
 
@@ -70,6 +75,7 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
         case .derivedData: L10n.tr("category.derivedData.subtitle")
         case .archives: L10n.tr("category.archives.subtitle")
         case .documentation: L10n.tr("category.documentation.subtitle")
+        case .androidEmulators: L10n.tr("category.androidEmulators.subtitle")
         }
     }
 
@@ -82,6 +88,7 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
         case .derivedData: "hammer"
         case .archives: "archivebox"
         case .documentation: "books.vertical"
+        case .androidEmulators: "smartphone"
         }
     }
 }

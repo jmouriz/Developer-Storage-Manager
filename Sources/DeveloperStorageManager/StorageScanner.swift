@@ -67,6 +67,7 @@ struct StorageScanner: Sendable {
             }
         }
 
+        scanAndroidEmulators(into: &locations, warnings: &warnings)
         markOlderVersions(in: &locations)
         let disk = diskCapacity()
         return StorageSnapshot(
@@ -76,6 +77,90 @@ struct StorageScanner: Sendable {
             totalDiskBytes: disk.total,
             availableDiskBytes: disk.available
         )
+    }
+
+    private func scanAndroidEmulators(
+        into locations: inout [StorageLocation],
+        warnings: inout [String]
+    ) {
+        let avdRoot = URL(fileURLWithPath: homePath)
+            .appendingPathComponent(".android/avd", isDirectory: true)
+        guard fileManager.fileExists(atPath: avdRoot.path) else { return }
+
+        do {
+            let descriptors = try fileManager.contentsOfDirectory(
+                at: avdRoot,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            ).filter { $0.pathExtension == "ini" }
+
+            for descriptor in descriptors {
+                let descriptorValues = iniValues(at: descriptor)
+                let fallbackName = descriptor.deletingPathExtension().lastPathComponent
+                let avdURL: URL
+                if let configuredPath = descriptorValues["path"], !configuredPath.isEmpty {
+                    avdURL = URL(fileURLWithPath: configuredPath)
+                } else if let relativePath = descriptorValues["path.rel"], !relativePath.isEmpty {
+                    avdURL = URL(fileURLWithPath: homePath).appendingPathComponent(relativePath)
+                } else {
+                    avdURL = avdRoot.appendingPathComponent("\(fallbackName).avd", isDirectory: true)
+                }
+                guard fileManager.fileExists(atPath: avdURL.path) else { continue }
+
+                let config = iniValues(at: avdURL.appendingPathComponent("config.ini"))
+                let displayName = config["avd.ini.displayname"] ?? fallbackName.replacingOccurrences(of: "_", with: " ")
+                let api = androidAPI(from: config)
+                let version = api.map { [$0] }
+                let architecture = config["abi.type"] ?? androidArchitecture(from: config["image.sysdir.1"])
+                let device = config["hw.device.name"] ?? config["hw.device.manufacturer"]
+                let detailParts = [
+                    api.map { "Android API \($0)" },
+                    architecture,
+                    device
+                ].compactMap { $0 }.filter { !$0.isEmpty }
+                let modified = try? avdURL.resourceValues(forKeys: [.contentModificationDateKey])
+
+                locations.append(StorageLocation(
+                    category: .androidEmulators,
+                    name: displayName,
+                    detail: detailParts.joined(separator: " · "),
+                    path: avdURL.path,
+                    byteCount: allocatedSize(of: avdURL),
+                    modifiedAt: modified?.contentModificationDate,
+                    comparisonGroup: device.map { "android:\($0)" },
+                    versionComponents: version,
+                    relatedPaths: [descriptor.path]
+                ))
+            }
+        } catch {
+            warnings.append(L10n.format("scanner.readError", avdRoot.path, error.localizedDescription))
+        }
+    }
+
+    private func iniValues(at url: URL) -> [String: String] {
+        guard let contents = try? String(contentsOf: url, encoding: .utf8) else { return [:] }
+        return contents.split(whereSeparator: \.isNewline).reduce(into: [:]) { result, line in
+            let text = line.trimmingCharacters(in: .whitespaces)
+            guard !text.isEmpty, !text.hasPrefix("#"), let separator = text.firstIndex(of: "=") else { return }
+            let key = text[..<separator].trimmingCharacters(in: .whitespaces)
+            let value = text[text.index(after: separator)...].trimmingCharacters(in: .whitespaces)
+            result[key] = value
+        }
+    }
+
+    private func androidAPI(from config: [String: String]) -> Int? {
+        let candidates = [config["image.sysdir.1"], config["target"]].compactMap { $0 }
+        for candidate in candidates {
+            if let range = candidate.range(of: #"android-(\d+)"#, options: .regularExpression) {
+                return Int(candidate[range].dropFirst("android-".count))
+            }
+        }
+        return nil
+    }
+
+    private func androidArchitecture(from imagePath: String?) -> String? {
+        guard let imagePath else { return nil }
+        return imagePath.split(separator: "/").last.map(String.init)
     }
 
     private func diskCapacity() -> (total: Int64, available: Int64) {

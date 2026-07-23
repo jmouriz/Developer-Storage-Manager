@@ -2,12 +2,12 @@
 set -euo pipefail
 
 project_dir=${0:A:h:h}
-volume_name="Xcode Storage Manager"
+volume_name="Developer Storage Manager"
 output_dir="$project_dir/.build"
-output_dmg="$output_dir/Xcode Storage Manager.dmg"
-temporary_dir=$(mktemp -d /private/tmp/xcode-storage-manager-dmg.XXXXXX)
+output_dmg="$output_dir/Developer Storage Manager.dmg"
+temporary_dir=$(mktemp -d /private/tmp/developer-storage-manager-dmg.XXXXXX)
 staging_dir="$temporary_dir/staging"
-readwrite_dmg="$temporary_dir/Xcode Storage Manager-rw.dmg"
+readwrite_dmg="$temporary_dir/Developer Storage Manager-rw.dmg"
 volume_path=""
 device=""
 
@@ -22,9 +22,9 @@ trap cleanup EXIT
 "$project_dir/Scripts/build-app.sh" release >/dev/null
 
 mkdir -p "$staging_dir" "$output_dir"
-cp -R "$output_dir/Xcode Storage Manager.app" "$staging_dir/"
-cp "$project_dir/Assets/DMGBackground.png" "$staging_dir/Xcode Storage Manager.app/Contents/Resources/DMGBackground.png"
-codesign --force --deep --sign - "$staging_dir/Xcode Storage Manager.app"
+cp -R "$output_dir/Developer Storage Manager.app" "$staging_dir/"
+cp "$project_dir/Assets/DMGBackground.png" "$staging_dir/Developer Storage Manager.app/Contents/Resources/DMGBackground.png"
+codesign --force --deep --sign - "$staging_dir/Developer Storage Manager.app"
 ln -s /Applications "$staging_dir/Applications"
 
 hdiutil create \

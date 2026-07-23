@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in Xcode Storage Manager.
+Thank you for your interest in Developer Storage Manager.
 
 ## Development setup
 
@@ -15,7 +15,7 @@ Thank you for your interest in Xcode Storage Manager.
 4. Launch the app:
 
    ```bash
-   swift run XcodeStorageManager
+   swift run DeveloperStorageManager
    ```
 
 ## Pull requests

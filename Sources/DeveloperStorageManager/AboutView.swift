@@ -2,10 +2,10 @@ import AppKit
 import SwiftUI
 
 struct AboutView: View {
-    private let repositoryURL = URL(string: "https://github.com/jmouriz/Xcode-Storage-Manager")!
+    private let repositoryURL = URL(string: "https://github.com/jmouriz/Developer-Storage-Manager")!
 
     private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.2.0"
     }
 
     var body: some View {
@@ -17,7 +17,7 @@ struct AboutView: View {
                 .accessibilityHidden(true)
 
             VStack(spacing: 5) {
-                Text("Xcode Storage Manager")
+                Text("Developer Storage Manager")
                     .font(.title.bold())
                 Text(L10n.format("about.version", version))
                     .foregroundStyle(.secondary)

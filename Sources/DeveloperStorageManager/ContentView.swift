@@ -28,7 +28,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("Xcode Storage")
+            .navigationTitle("Developer Storage")
             .safeAreaInset(edge: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L10n.tr("analyzed.space"))
@@ -121,7 +121,7 @@ private struct SummaryView: View {
                     VStack(spacing: 12) {
                         MetricCard(title: L10n.tr("metric.capacity"), value: snapshot.totalDiskBytes, icon: "internaldrive")
                         MetricCard(title: L10n.tr("metric.available"), value: snapshot.availableDiskBytes, icon: "checkmark.circle")
-                        MetricCard(title: L10n.tr("metric.xcodeAnalyzed"), value: snapshot.totalBytes, icon: "hammer")
+                        MetricCard(title: L10n.tr("metric.developerAnalyzed"), value: snapshot.totalBytes, icon: "hammer")
                         MetricCard(
                             title: L10n.tr("metric.suggestedCandidates"),
                             value: snapshot.candidateBytes,
@@ -205,7 +205,7 @@ private struct SummaryView: View {
                             .controlSize(.regular)
                         Text(L10n.tr("action.scanning"))
                             .font(.headline)
-                        Text(L10n.tr("chart.xcodeData"))
+                            Text(L10n.tr("chart.developerData"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -214,14 +214,14 @@ private struct SummaryView: View {
                     VStack(spacing: 2) {
                         Text(snapshot.totalBytes, format: .byteCount(style: .file))
                             .font(.title2.bold())
-                        Text(L10n.tr("chart.xcodeAnalyzed")).font(.caption).foregroundStyle(.secondary)
+                        Text(L10n.tr("chart.developerAnalyzed")).font(.caption).foregroundStyle(.secondary)
                     }
                     .transition(.opacity)
                 }
             }
             .frame(width: 300, height: 260)
             HStack(spacing: 14) {
-                DiskLegend(color: .cyan, title: "Xcode")
+                DiskLegend(color: .cyan, title: L10n.tr("chart.developerData"))
                 DiskLegend(color: .blue.opacity(0.55), title: L10n.tr("chart.otherData"))
                 DiskLegend(color: .gray.opacity(0.25), title: L10n.tr("metric.available"))
             }

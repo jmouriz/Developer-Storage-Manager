@@ -1,5 +1,5 @@
 import Testing
-@testable import XcodeStorageManager
+@testable import DeveloperStorageManager
 
 @Test func allSupportedLocalizationsAreBundled() {
     let available = Set(L10n.availableLocalizations)

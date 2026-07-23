@@ -1,6 +1,6 @@
 on run arguments
     set volumeName to item 1 of arguments
-    set backgroundFile to POSIX file ("/Volumes/" & volumeName & "/Xcode Storage Manager.app/Contents/Resources/DMGBackground.png") as alias
+    set backgroundFile to POSIX file ("/Volumes/" & volumeName & "/Developer Storage Manager.app/Contents/Resources/DMGBackground.png") as alias
 
     tell application "Finder"
         set targetDisk to disk volumeName
@@ -23,9 +23,9 @@ on run arguments
                 set background picture to backgroundFile
             end tell
 
-            set position of item "Xcode Storage Manager.app" to {300, 360}
+            set position of item "Developer Storage Manager.app" to {300, 360}
             set position of item "Applications" to {925, 360}
-            set extension hidden of item "Xcode Storage Manager.app" to true
+            set extension hidden of item "Developer Storage Manager.app" to true
             update without registering applications
             delay 2
             close

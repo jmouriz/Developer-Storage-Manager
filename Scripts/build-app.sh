@@ -4,7 +4,7 @@ set -euo pipefail
 project_dir=${0:A:h:h}
 configuration=${1:-debug}
 build_dir="$project_dir/.build"
-app_dir="$build_dir/Xcode Storage Manager.app"
+app_dir="$build_dir/Developer Storage Manager.app"
 contents_dir="$app_dir/Contents"
 resources_dir="$contents_dir/Resources"
 asset_catalog_dir="$build_dir/AppAssets.xcassets"
@@ -13,12 +13,12 @@ iconset_dir="$asset_catalog_dir/AppIcon.appiconset"
 cd "$project_dir"
 swift build --disable-sandbox -c "$configuration"
 binary_dir=$(swift build --disable-sandbox -c "$configuration" --show-bin-path)
-binary_path="$binary_dir/XcodeStorageManager"
+binary_path="$binary_dir/DeveloperStorageManager"
 
 mkdir -p "$contents_dir/MacOS" "$resources_dir" "$iconset_dir"
-cp "$binary_path" "$contents_dir/MacOS/XcodeStorageManager"
+cp "$binary_path" "$contents_dir/MacOS/DeveloperStorageManager"
 
-resource_bundle="$binary_dir/XcodeStorageManager_XcodeStorageManager.bundle"
+resource_bundle="$binary_dir/DeveloperStorageManager_DeveloperStorageManager.bundle"
 if [[ -d "$resource_bundle" ]]; then
     cp -R "$resource_bundle" "$resources_dir/"
 fi
@@ -43,7 +43,7 @@ xcrun actool "$asset_catalog_dir" \
     --output-partial-info-plist "$build_dir/AppIcon-Info.plist" \
     >/dev/null
 
-sed "s/@VERSION@/0.1.0/g" "$project_dir/Scripts/Info.plist.template" > "$contents_dir/Info.plist"
+sed "s/@VERSION@/0.2.0/g" "$project_dir/Scripts/Info.plist.template" > "$contents_dir/Info.plist"
 printf 'APPL????' > "$contents_dir/PkgInfo"
 codesign --force --deep --sign - "$app_dir"
 touch "$app_dir"
