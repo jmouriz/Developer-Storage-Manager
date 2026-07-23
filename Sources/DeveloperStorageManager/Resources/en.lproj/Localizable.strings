@@ -29,7 +29,7 @@
 "chart.otherData" = "Other data";
 "cleanup.all.confirm.title" = "Clean all candidates?";
 "cleanup.all.button" = "Clean %d items";
-"cleanup.all.message" = "This will attempt to recover %@. User data will be moved to the Trash; simulators and runtimes are removed through CoreSimulator. The scan will run again when finished.";
+"cleanup.all.message" = "This will attempt to recover %@. User data will be moved to the Trash; simulators and runtimes are removed through CoreSimulator. Gradle data may need to be downloaded or rebuilt, making the next build slower. The scan will run again when finished.";
 "scanning.sizes" = "Calculating sizes…";
 "empty.title" = "No items found";
 "empty.description" = "This location contains no developer data.";
@@ -56,6 +56,7 @@
 "category.androidSystemImages.title" = "Android system images";
 "category.androidBuildTools.title" = "Android Build Tools";
 "category.androidSources.title" = "Android sources";
+"category.gradleCache.title" = "Gradle cache";
 "category.runtimes.subtitle" = "Installed iOS, watchOS, tvOS, and visionOS versions";
 "category.simulators.subtitle" = "Device data created by CoreSimulator";
 "category.caches.subtitle" = "Caches generated while running simulators";
@@ -68,6 +69,7 @@
 "category.androidSystemImages.subtitle" = "Operating system images used by Android emulators";
 "category.androidBuildTools.subtitle" = "Installed versions of aapt2, d8, zipalign, and related tools";
 "category.androidSources.subtitle" = "Android source packages used for code navigation";
+"category.gradleCache.subtitle" = "Caches, distributions, and temporary data used by Gradle";
 "scanner.readError" = "Could not read %@: %@";
 "scanner.unknownRuntime" = "Unknown runtime";
 "scanner.deleted" = "deleted";
@@ -75,6 +77,16 @@
 "candidate.reviewNewerVersion" = "Newer version %@ is installed. Review project requirements before deleting.";
 "android.systemImage.inUse" = "In use by an installed Android emulator.";
 "android.buildTools.detail" = "Android Build Tools %@";
+"gradle.kind.cache" = "Cache";
+"gradle.kind.distribution" = "Distribution";
+"gradle.kind.daemon" = "Daemon";
+"gradle.kind.native" = "Native components";
+"gradle.kind.temporary" = "Temporary files";
+"gradle.detail" = "Global Gradle data; items unused for %d days may be suggested for cleanup.";
+"gradle.stale" = "Not modified in the last %d days. Gradle can recreate or download it.";
+"gradle.running" = "Gradle is currently running. Cleanup is disabled.";
+"cleanup.gradleRunning" = "Gradle is currently running. Stop Gradle or Android Studio builds and scan again before cleaning.";
+"delete.gradle.message" = "This will free %@ by moving the item to the Trash. Gradle may need to download or rebuild it, making the next build slower. The scan will then run again.";
 "cleanup.unsafePath" = "This location is not safe to delete: %@";
 "cleanup.runtimeMissing" = "The identifier for runtime %@ could not be found.";
 "cleanup.simctlFailed" = "simctl exited with code %d.";

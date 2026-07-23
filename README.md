@@ -28,12 +28,19 @@ Developer Storage Manager explains where disk space is being used, recommends ol
 
 ![Installed Android system images](Screenshots/android-system-images.png)
 
+### Gradle Cache
+
+![Gradle cache and cleanup candidates](Screenshots/gradle-cache.png)
+
 ## Features
 
 - Disk usage overview across Xcode and Android development data.
 - Simulator names and runtime versions instead of opaque UUIDs.
 - Android Virtual Device names, API levels, architectures, sizes, and locations.
 - Android Platforms, System Images, Build Tools, and Sources grouped by installed version.
+- Gradle caches, wrapper distributions, daemon data, native components, and temporary files grouped into recoverable units.
+- Conservative Gradle cleanup suggestions for data not modified in the last 90 days.
+- Automatic Gradle cleanup lock while Gradle is running.
 - Protection for system images currently used by an installed AVD.
 - Conservative review notices for older SDK components that a project may still require.
 - Cleanup recommendations that keep the newest version for each device model.
@@ -86,6 +93,8 @@ swift test
 Every cleanup operation requires confirmation. User-managed files, Android Virtual Devices, and Android SDK packages are moved to the Trash, while Apple simulator devices and runtimes are removed through CoreSimulator. Cleanup is restricted to known paths under `~/Library/Developer`, `~/.android/avd`, and the detected Android SDK.
 
 Bulk cleanup is intentionally conservative: it may suggest older, unused Android system images, but never Platforms, Build Tools, Sources, or images currently used by an AVD. Those components remain available for individual review and confirmed cleanup.
+
+Gradle data is suggested only when none of its contents have been modified in the last 90 days. Cleanup is disabled while Gradle is running. Deleted Gradle data can be downloaded or recreated, but the next build may be slower and may require an Internet connection.
 
 Please report security concerns according to [SECURITY.md](SECURITY.md).
 

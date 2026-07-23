@@ -28,8 +28,45 @@ struct CleanupService: Sendable {
             try moveAndroidEmulatorToTrash(location)
         case .androidPlatforms, .androidSystemImages, .androidBuildTools, .androidSources:
             try moveAndroidSDKDataToTrash(at: URL(fileURLWithPath: location.path))
+        case .gradleCache:
+            guard !isGradleRunning() else { throw CleanupError.commandFailed(L10n.tr("cleanup.gradleRunning")) }
+            try moveGradleDataToTrash(at: URL(fileURLWithPath: location.path))
         case .simulatorCaches, .deviceSupport, .derivedData, .archives, .documentation:
             try moveUserDataToTrash(at: URL(fileURLWithPath: location.path))
+        }
+    }
+
+    private func moveGradleDataToTrash(at url: URL) throws {
+        let root = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".gradle", isDirectory: true)
+            .standardizedFileURL.path
+        let target = url.standardizedFileURL.path
+        guard target.hasPrefix(root + "/"), target != root else {
+            throw CleanupError.unsafePath(target)
+        }
+        try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+    }
+
+    private func isGradleRunning() -> Bool {
+        let process = Process()
+        let output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/bin/ps")
+        process.arguments = ["-ax", "-o", "command="]
+        process.standardOutput = output
+        process.standardError = Pipe()
+        do {
+            try process.run()
+            let commands = String(
+                data: output.fileHandleForReading.readDataToEndOfFile(),
+                encoding: .utf8
+            )?.lowercased() ?? ""
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return true }
+            return commands.contains("gradledaemon")
+                || commands.contains("org.gradle.launcher.daemon")
+                || commands.contains("gradle daemon")
+        } catch {
+            return true
         }
     }
 

@@ -18,6 +18,7 @@ struct StorageLocation: Identifiable, Hashable, Sendable {
     let versionComponents: [Int]?
     let relatedPaths: [String]
     let recommendationPolicy: RecommendationPolicy
+    let isDeletionBlocked: Bool
     var candidateReason: String?
     var advisoryReason: String?
 
@@ -34,6 +35,7 @@ struct StorageLocation: Identifiable, Hashable, Sendable {
         versionComponents: [Int]? = nil,
         relatedPaths: [String] = [],
         recommendationPolicy: RecommendationPolicy = .automatic,
+        isDeletionBlocked: Bool = false,
         candidateReason: String? = nil,
         advisoryReason: String? = nil
     ) {
@@ -48,6 +50,7 @@ struct StorageLocation: Identifiable, Hashable, Sendable {
         self.versionComponents = versionComponents
         self.relatedPaths = relatedPaths
         self.recommendationPolicy = recommendationPolicy
+        self.isDeletionBlocked = isDeletionBlocked
         self.candidateReason = candidateReason
         self.advisoryReason = advisoryReason
     }
@@ -66,6 +69,7 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
     case androidSystemImages
     case androidBuildTools
     case androidSources
+    case gradleCache
 
     var id: String { rawValue }
 
@@ -75,7 +79,7 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
     ]
     static let androidCategories: [StorageCategory] = [
         .androidEmulators, .androidPlatforms, .androidSystemImages,
-        .androidBuildTools, .androidSources
+        .androidBuildTools, .androidSources, .gradleCache
     ]
 
     var title: String {
@@ -92,6 +96,7 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
         case .androidSystemImages: L10n.tr("category.androidSystemImages.title")
         case .androidBuildTools: L10n.tr("category.androidBuildTools.title")
         case .androidSources: L10n.tr("category.androidSources.title")
+        case .gradleCache: L10n.tr("category.gradleCache.title")
         }
     }
 
@@ -109,6 +114,7 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
         case .androidSystemImages: L10n.tr("category.androidSystemImages.subtitle")
         case .androidBuildTools: L10n.tr("category.androidBuildTools.subtitle")
         case .androidSources: L10n.tr("category.androidSources.subtitle")
+        case .gradleCache: L10n.tr("category.gradleCache.subtitle")
         }
     }
 
@@ -126,6 +132,7 @@ enum StorageCategory: String, CaseIterable, Identifiable, Sendable {
         case .androidSystemImages: "externaldrive.fill.badge.checkmark"
         case .androidBuildTools: "wrench.and.screwdriver"
         case .androidSources: "chevron.left.forwardslash.chevron.right"
+        case .gradleCache: "shippingbox.and.arrow.backward"
         }
     }
 }

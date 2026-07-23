@@ -29,7 +29,7 @@
 "chart.otherData" = "Otros datos";
 "cleanup.all.confirm.title" = "¿Limpiar todos los candidatos?";
 "cleanup.all.button" = "Limpiar %d elementos";
-"cleanup.all.message" = "Se intentará recuperar %@. Los datos de usuario irán a la Papelera; simuladores y runtimes se eliminan mediante CoreSimulator. Al finalizar se repetirá el análisis.";
+"cleanup.all.message" = "Se intentará recuperar %@. Los datos de usuario irán a la Papelera; simuladores y runtimes se eliminan mediante CoreSimulator. Los datos de Gradle podrían tener que descargarse o reconstruirse, haciendo más lenta la próxima compilación. Al finalizar se repetirá el análisis.";
 "scanning.sizes" = "Calculando tamaños…";
 "empty.title" = "No se encontraron elementos";
 "empty.description" = "Esta ubicación no contiene datos de desarrollo.";
@@ -56,6 +56,7 @@
 "category.androidSystemImages.title" = "Imágenes de sistema Android";
 "category.androidBuildTools.title" = "Android Build Tools";
 "category.androidSources.title" = "Fuentes de Android";
+"category.gradleCache.title" = "Caché de Gradle";
 "category.runtimes.subtitle" = "Versiones de iOS, watchOS, tvOS y visionOS instaladas";
 "category.simulators.subtitle" = "Datos de dispositivos creados por CoreSimulator";
 "category.caches.subtitle" = "Cachés generadas al ejecutar simuladores";
@@ -68,6 +69,7 @@
 "category.androidSystemImages.subtitle" = "Imágenes del sistema utilizadas por los emuladores Android";
 "category.androidBuildTools.subtitle" = "Versiones instaladas de aapt2, d8, zipalign y herramientas relacionadas";
 "category.androidSources.subtitle" = "Paquetes de fuentes Android utilizados para navegar el código";
+"category.gradleCache.subtitle" = "Cachés, distribuciones y datos temporales utilizados por Gradle";
 "scanner.readError" = "No se pudo leer %@: %@";
 "scanner.unknownRuntime" = "Runtime desconocido";
 "scanner.deleted" = "eliminado";
@@ -75,6 +77,16 @@
 "candidate.reviewNewerVersion" = "Está instalada la versión más reciente %@. Revisá los requisitos de tus proyectos antes de eliminar.";
 "android.systemImage.inUse" = "En uso por un emulador Android instalado.";
 "android.buildTools.detail" = "Android Build Tools %@";
+"gradle.kind.cache" = "Caché";
+"gradle.kind.distribution" = "Distribución";
+"gradle.kind.daemon" = "Daemon";
+"gradle.kind.native" = "Componentes nativos";
+"gradle.kind.temporary" = "Archivos temporales";
+"gradle.detail" = "Datos globales de Gradle; los elementos sin uso durante %d días pueden sugerirse para limpieza.";
+"gradle.stale" = "No fue modificado en los últimos %d días. Gradle puede recrearlo o descargarlo.";
+"gradle.running" = "Gradle está ejecutándose. La limpieza está deshabilitada.";
+"cleanup.gradleRunning" = "Gradle está ejecutándose. Detené las compilaciones de Gradle o Android Studio y volvé a analizar antes de limpiar.";
+"delete.gradle.message" = "Esto liberará %@ al enviar el elemento a la Papelera. Gradle podría tener que descargarlo o reconstruirlo, haciendo más lenta la próxima compilación. Luego se repetirá el análisis.";
 "cleanup.unsafePath" = "La ubicación no es segura para eliminar: %@";
 "cleanup.runtimeMissing" = "No se encontró el identificador del runtime %@.";
 "cleanup.simctlFailed" = "simctl terminó con código %d.";

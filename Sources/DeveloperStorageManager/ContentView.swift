@@ -386,7 +386,7 @@ private struct CategoryView: View {
                             } label: {
                                 Label(L10n.tr("action.delete"), systemImage: "trash")
                             }
-                            .disabled(model.isScanning || model.isCleaning)
+                            .disabled(model.isScanning || model.isCleaning || item.isDeletionBlocked)
                         } label: {
                             Image(systemName: "ellipsis.circle")
                         }
@@ -424,6 +424,8 @@ private struct CategoryView: View {
         switch item.category {
         case .simulatorDevices, .simulatorRuntimes:
             L10n.format("delete.coreSimulator.message", item.byteCount.formatted(.byteCount(style: .file)))
+        case .gradleCache:
+            L10n.format("delete.gradle.message", item.byteCount.formatted(.byteCount(style: .file)))
         default:
             L10n.format("delete.trash.message", item.byteCount.formatted(.byteCount(style: .file)))
         }

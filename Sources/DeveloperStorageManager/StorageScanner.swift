@@ -9,16 +9,29 @@ struct StorageScanner: Sendable {
     private let roots: [Root]
     private let homePath: String
     private let androidSDKDirectory: URL?
+    private let gradleDirectory: URL
+    private let gradleRunningOverride: Bool?
+    private let referenceDate: Date
+    private let gradleStaleDays: Int
 
     private var fileManager: FileManager { FileManager.default }
 
     init(
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
-        androidSDKDirectory: URL? = nil
+        androidSDKDirectory: URL? = nil,
+        gradleDirectory: URL? = nil,
+        gradleIsRunning: Bool? = nil,
+        referenceDate: Date = .now,
+        gradleStaleDays: Int = 90
     ) {
         let home = homeDirectory.path
         homePath = home
         self.androidSDKDirectory = androidSDKDirectory ?? Self.findAndroidSDK(homeDirectory: homeDirectory)
+        self.gradleDirectory = gradleDirectory
+            ?? homeDirectory.appendingPathComponent(".gradle", isDirectory: true)
+        gradleRunningOverride = gradleIsRunning
+        self.referenceDate = referenceDate
+        self.gradleStaleDays = gradleStaleDays
         roots = [
             Root(category: .simulatorRuntimes, path: "/Library/Developer/CoreSimulator/Volumes"),
             Root(category: .simulatorDevices, path: "\(home)/Library/Developer/CoreSimulator/Devices"),
@@ -74,6 +87,7 @@ struct StorageScanner: Sendable {
 
         scanAndroidEmulators(into: &locations, warnings: &warnings)
         scanAndroidSDK(into: &locations, warnings: &warnings)
+        scanGradleCache(into: &locations, warnings: &warnings)
         markOlderVersions(in: &locations)
         let disk = diskCapacity()
         return StorageSnapshot(
@@ -83,6 +97,131 @@ struct StorageScanner: Sendable {
             totalDiskBytes: disk.total,
             availableDiskBytes: disk.available
         )
+    }
+
+    private func scanGradleCache(
+        into locations: inout [StorageLocation],
+        warnings: inout [String]
+    ) {
+        guard fileManager.fileExists(atPath: gradleDirectory.path) else { return }
+        let isRunning = gradleRunningOverride ?? isGradleRunning()
+        let cutoff = Calendar.current.date(byAdding: .day, value: -gradleStaleDays, to: referenceDate)
+            ?? referenceDate
+
+        let groups: [(root: URL, kind: String, wholeRoot: Bool)] = [
+            (gradleDirectory.appendingPathComponent("caches", isDirectory: true), L10n.tr("gradle.kind.cache"), false),
+            (gradleDirectory.appendingPathComponent("wrapper/dists", isDirectory: true), L10n.tr("gradle.kind.distribution"), false),
+            (gradleDirectory.appendingPathComponent("daemon", isDirectory: true), L10n.tr("gradle.kind.daemon"), false),
+            (gradleDirectory.appendingPathComponent("native", isDirectory: true), L10n.tr("gradle.kind.native"), true),
+            (gradleDirectory.appendingPathComponent(".tmp", isDirectory: true), L10n.tr("gradle.kind.temporary"), true)
+        ]
+
+        for group in groups where fileManager.fileExists(atPath: group.root.path) {
+            do {
+                let units = group.wholeRoot ? [group.root] : try directoryChildren(of: group.root)
+                for unit in units {
+                    let stats = gradleStats(of: unit, cutoff: cutoff)
+                    let modified = stats.modifiedAt
+                    let name = group.wholeRoot
+                        ? group.kind
+                        : "\(group.kind) · \(unit.lastPathComponent)"
+                    locations.append(StorageLocation(
+                        category: .gradleCache,
+                        name: name,
+                        detail: L10n.format("gradle.detail", gradleStaleDays),
+                        path: unit.path,
+                        byteCount: stats.size,
+                        modifiedAt: modified,
+                        recommendationPolicy: isRunning ? .none : .automatic,
+                        isDeletionBlocked: isRunning,
+                        candidateReason: !isRunning && stats.isStale
+                            ? L10n.format("gradle.stale", gradleStaleDays)
+                            : nil,
+                        advisoryReason: isRunning ? L10n.tr("gradle.running") : nil
+                    ))
+                }
+            } catch {
+                warnings.append(L10n.format("scanner.readError", group.root.path, error.localizedDescription))
+            }
+        }
+    }
+
+    private func gradleStats(of url: URL, cutoff: Date) -> (size: Int64, modifiedAt: Date?, isStale: Bool) {
+        let diskSize = diskUsage(of: url)
+        let latestModification = latestContentModification(in: url)
+        let fallback = diskSize == nil || latestModification == nil ? directoryStats(of: url) : nil
+        let size = diskSize ?? fallback?.size ?? 0
+        let modified = latestModification ?? fallback?.modifiedAt
+        let isStale = modified.map { $0 < cutoff } ?? false
+        return (size, modified, isStale)
+    }
+
+    private func diskUsage(of url: URL) -> Int64? {
+        let process = Process()
+        let output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/du")
+        process.arguments = ["-sk", url.path]
+        process.standardOutput = output
+        process.standardError = Pipe()
+        do {
+            try process.run()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return nil }
+            let data = output.fileHandleForReading.readDataToEndOfFile()
+            guard
+                let line = String(data: data, encoding: .utf8)?.split(whereSeparator: \.isNewline).first,
+                let kilobytes = Int64(line.split(whereSeparator: \.isWhitespace).first ?? "")
+            else { return nil }
+            return kilobytes * 1_024
+        } catch {
+            return nil
+        }
+    }
+
+    private func latestContentModification(in url: URL) -> Date? {
+        let process = Process()
+        let output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/find")
+        process.arguments = [
+            url.path, "-type", "f", "-exec", "/usr/bin/stat", "-f", "%m", "{}", "+"
+        ]
+        process.standardOutput = output
+        process.standardError = Pipe()
+        process.environment = ["LC_ALL": "C", "PATH": "/usr/bin:/bin"]
+        do {
+            try process.run()
+            let data = output.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return nil }
+            let timestamps = String(data: data, encoding: .utf8)?
+                .split(whereSeparator: \.isNewline)
+                .compactMap { TimeInterval($0) }
+            guard let latest = timestamps?.max() else { return nil }
+            return Date(timeIntervalSince1970: latest)
+        } catch {
+            return nil
+        }
+    }
+
+    private func isGradleRunning() -> Bool {
+        let process = Process()
+        let output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/bin/ps")
+        process.arguments = ["-ax", "-o", "command="]
+        process.standardOutput = output
+        process.standardError = Pipe()
+        do {
+            try process.run()
+            let data = output.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            guard process.terminationStatus == 0 else { return true }
+            let commands = String(data: data, encoding: .utf8)?.lowercased() ?? ""
+            return commands.contains("gradledaemon")
+                || commands.contains("org.gradle.launcher.daemon")
+                || commands.contains("gradle daemon")
+        } catch {
+            return true
+        }
     }
 
     private static func findAndroidSDK(homeDirectory: URL) -> URL? {
@@ -403,19 +542,32 @@ struct StorageScanner: Sendable {
     }
 
     private func allocatedSize(of url: URL) -> Int64 {
-        let keys: Set<URLResourceKey> = [.isRegularFileKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey]
+        directoryStats(of: url).size
+    }
+
+    private func directoryStats(of url: URL) -> (size: Int64, modifiedAt: Date?) {
+        let keys: Set<URLResourceKey> = [
+            .isRegularFileKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey,
+            .contentModificationDateKey
+        ]
         guard let enumerator = fileManager.enumerator(
             at: url,
             includingPropertiesForKeys: Array(keys),
             options: [.skipsPackageDescendants],
             errorHandler: { _, _ in true }
-        ) else { return 0 }
+        ) else { return (0, nil) }
 
         var total: Int64 = 0
+        var mostRecent = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
         for case let fileURL as URL in enumerator {
-            guard let values = try? fileURL.resourceValues(forKeys: keys), values.isRegularFile == true else { continue }
-            total += Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
+            guard let values = try? fileURL.resourceValues(forKeys: keys) else { continue }
+            if values.isRegularFile == true {
+                total += Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
+            }
+            if let date = values.contentModificationDate, mostRecent == nil || date > mostRecent! {
+                mostRecent = date
+            }
         }
-        return total
+        return (total, mostRecent)
     }
 }

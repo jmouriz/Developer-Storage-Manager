@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-23
+
+### Added
+
+- Gradle cache, wrapper distribution, daemon, native component, and temporary-data analysis.
+- Cleanup suggestions for Gradle data not modified in the last 90 days.
+- Protection that disables Gradle cleanup while Gradle is running.
+
+### Changed
+
+- Cleanup confirmations now explain that Gradle may download or rebuild deleted data and that the next build may be slower.
+
 ## [0.3.0] - 2026-07-23
 
 ### Added

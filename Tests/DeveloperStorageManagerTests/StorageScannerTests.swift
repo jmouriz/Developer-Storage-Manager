@@ -150,3 +150,79 @@ import Testing
     #expect(usedImage.candidateReason == nil)
     #expect(usedImage.advisoryReason == L10n.tr("android.systemImage.inUse"))
 }
+
+@Test func gradleItemsUnusedForNinetyDaysBecomeCandidates() throws {
+    let temporaryHome = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let gradle = temporaryHome.appendingPathComponent(".gradle", isDirectory: true)
+    let oldCache = gradle.appendingPathComponent("caches/8.0", isDirectory: true)
+    let recentCache = gradle.appendingPathComponent("caches/9.0", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: temporaryHome) }
+
+    let referenceDate = Date(timeIntervalSince1970: 1_774_224_000)
+    try createGradleFixture(
+        at: oldCache,
+        modifiedAt: referenceDate.addingTimeInterval(-100 * 86_400)
+    )
+    try createGradleFixture(
+        at: recentCache,
+        modifiedAt: referenceDate.addingTimeInterval(-10 * 86_400)
+    )
+
+    let snapshot = StorageScanner(
+        homeDirectory: temporaryHome,
+        androidSDKDirectory: temporaryHome.appendingPathComponent("AndroidSDK"),
+        gradleDirectory: gradle,
+        gradleIsRunning: false,
+        referenceDate: referenceDate
+    ).scan()
+    let oldPath = oldCache.resolvingSymlinksInPath().path
+    let recentPath = recentCache.resolvingSymlinksInPath().path
+    let oldItem = try #require(snapshot.locations(in: .gradleCache).first {
+        URL(fileURLWithPath: $0.path).resolvingSymlinksInPath().path == oldPath
+    })
+    let recentItem = try #require(snapshot.locations(in: .gradleCache).first {
+        URL(fileURLWithPath: $0.path).resolvingSymlinksInPath().path == recentPath
+    })
+
+    #expect(oldItem.candidateReason != nil)
+    #expect(oldItem.isDeletionBlocked == false)
+    #expect(recentItem.candidateReason == nil)
+}
+
+@Test func gradleCleanupIsBlockedWhileGradleIsRunning() throws {
+    let temporaryHome = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let gradle = temporaryHome.appendingPathComponent(".gradle", isDirectory: true)
+    let cache = gradle.appendingPathComponent("caches/8.0", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: temporaryHome) }
+
+    let referenceDate = Date(timeIntervalSince1970: 1_774_224_000)
+    try createGradleFixture(
+        at: cache,
+        modifiedAt: referenceDate.addingTimeInterval(-100 * 86_400)
+    )
+
+    let snapshot = StorageScanner(
+        homeDirectory: temporaryHome,
+        androidSDKDirectory: temporaryHome.appendingPathComponent("AndroidSDK"),
+        gradleDirectory: gradle,
+        gradleIsRunning: true,
+        referenceDate: referenceDate
+    ).scan()
+    let item = try #require(snapshot.locations(in: .gradleCache).first)
+
+    #expect(item.candidateReason == nil)
+    #expect(item.advisoryReason == L10n.tr("gradle.running"))
+    #expect(item.isDeletionBlocked)
+}
+
+private func createGradleFixture(at directory: URL, modifiedAt: Date) throws {
+    let fileManager = FileManager.default
+    try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+    let payload = directory.appendingPathComponent("payload.bin")
+    try Data(repeating: 1, count: 4_096).write(to: payload)
+    let attributes: [FileAttributeKey: Any] = [.modificationDate: modifiedAt]
+    try fileManager.setAttributes(attributes, ofItemAtPath: payload.path)
+    try fileManager.setAttributes(attributes, ofItemAtPath: directory.path)
+}
